@@ -3,6 +3,7 @@ import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js'
 import { BrowserSessionManager } from './auth/browser-session.js';
 import { getConfig } from './config.js';
 import { registerTools } from './tools/register.js';
+import packageJson from '../package.json' with { type: 'json' };
 
 export async function runServer(): Promise<void> {
   const config = getConfig();
@@ -12,7 +13,7 @@ export async function runServer(): Promise<void> {
 
   const server = new McpServer({
     name: 'canvas-local-mcp',
-    version: '0.1.0'
+    version: packageJson.version
   });
 
   registerTools(server, {
