@@ -21,6 +21,7 @@ import type {
   CanvasCourse,
   CanvasDiscussionEntry,
   CanvasDiscussionTopic,
+  CanvasDiscussionViewResponse,
   CanvasEnrollment,
   CanvasFile,
   CanvasModule,
@@ -99,6 +100,16 @@ function riskLevelFromEnrollment(enrollment: CanvasEnrollment | null): GradesSum
   }
 
   return 'low';
+}
+
+function normalizeDiscussionEntries(
+  payload: CanvasDiscussionEntry[] | CanvasDiscussionViewResponse | null | undefined
+): CanvasDiscussionEntry[] {
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  return Array.isArray(payload?.view) ? payload.view : [];
 }
 
 export class CanvasService {
@@ -192,9 +203,13 @@ export class CanvasService {
 
     let entries: CanvasDiscussionEntry[] = [];
     try {
-      entries = await this.client.withRequestContext((api) =>
-        this.client.getJson<CanvasDiscussionEntry[]>(api, `/api/v1/courses/${courseId}/discussion_topics/${topicId}/view`)
+      const response = await this.client.withRequestContext((api) =>
+        this.client.getJson<CanvasDiscussionEntry[] | CanvasDiscussionViewResponse>(
+          api,
+          `/api/v1/courses/${courseId}/discussion_topics/${topicId}/view`
+        )
       );
+      entries = normalizeDiscussionEntries(response);
     } catch (error) {
       if (!(error instanceof CanvasRequestError) || error.status !== 404) {
         throw error;

@@ -97,6 +97,10 @@ export interface CanvasDiscussionEntry {
   user_name?: string | null;
 }
 
+export interface CanvasDiscussionViewResponse {
+  view?: CanvasDiscussionEntry[] | null;
+}
+
 export interface CanvasDiscussionTopic {
   id: number;
   title: string;

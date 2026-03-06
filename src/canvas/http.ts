@@ -87,10 +87,20 @@ export class CanvasHttpClient {
   }
 
   async withRequestContext<T>(callback: (api: APIRequestContext) => Promise<T>): Promise<T> {
-    const storageState = this.browserContext ? await this.browserContext.storageState() : this.storageState;
-    const csrfToken = this.browserContext
-      ? decodeCookieValue((await this.browserContext.cookies(this.baseUrl)).find((cookie) => cookie.name === '_csrf_token')?.value)
-      : extractCsrfTokenFromStorageState(storageState, this.baseUrl);
+    if (this.browserContext) {
+      const csrfToken = decodeCookieValue(
+        (await this.browserContext.cookies(this.baseUrl)).find((cookie) => cookie.name === '_csrf_token')?.value
+      );
+
+      if (csrfToken) {
+        await this.browserContext.setExtraHTTPHeaders({ 'X-CSRF-Token': csrfToken });
+      }
+
+      return callback(this.browserContext.request);
+    }
+
+    const storageState = this.storageState;
+    const csrfToken = extractCsrfTokenFromStorageState(storageState, this.baseUrl);
     const api = await request.newContext({
       baseURL: this.baseUrl,
       storageState,

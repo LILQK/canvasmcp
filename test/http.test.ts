@@ -64,4 +64,10 @@ describe('csrf helpers', () => {
       resolveCanvasApiUrl('https://aula.uoc.edu', 'https://evil.example/api/v1/courses?page=2')
     ).toThrowError(CanvasRequestError);
   });
+
+  it('accepts pagination links on the configured origin', () => {
+    expect(
+      resolveCanvasApiUrl('https://aula.uoc.edu', 'https://aula.uoc.edu/api/v1/courses?page=2&per_page=100')
+    ).toBe('https://aula.uoc.edu/api/v1/courses?page=2&per_page=100');
+  });
 });
