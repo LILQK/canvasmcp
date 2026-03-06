@@ -1,6 +1,6 @@
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
-import { getConfig, resolveProfileDir } from '../src/config.js';
+import { getConfig, normalizeCanvasBaseUrl, resolveProfileDir } from '../src/config.js';
 
 const originalBaseUrl = process.env.CANVAS_BASE_URL;
 const originalProfileDir = process.env.CANVAS_PROFILE_DIR;
@@ -28,5 +28,13 @@ describe('config', () => {
       browserExecutablePath: 'C:/Browsers/Chrome/chrome.exe',
       browserName: 'Configured browser'
     });
+  });
+
+  it('normalizes the base url to https without trailing slash', () => {
+    expect(normalizeCanvasBaseUrl('https://aula.uoc.edu/')).toBe('https://aula.uoc.edu');
+  });
+
+  it('rejects non-https base urls', () => {
+    expect(() => normalizeCanvasBaseUrl('http://aula.uoc.edu')).toThrow('CANVAS_BASE_URL must use https:');
   });
 });

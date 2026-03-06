@@ -96,11 +96,22 @@ export function resolveBrowserExecutable(projectRoot = resolveProjectRoot()): {
   };
 }
 
+export function normalizeCanvasBaseUrl(rawValue: string): string {
+  const url = new URL(rawValue.trim());
+  if (url.protocol !== 'https:') {
+    throw new Error(`CANVAS_BASE_URL must use https: ${url.toString()}`);
+  }
+
+  url.search = '';
+  url.hash = '';
+  return url.toString().replace(/\/+$/, '');
+}
+
 export function getConfig(projectRoot = resolveProjectRoot()): AppConfig {
   const browser = resolveBrowserExecutable(projectRoot);
 
   return {
-    canvasBaseUrl: (process.env.CANVAS_BASE_URL?.trim() || DEFAULT_BASE_URL).replace(/\/+$/, ''),
+    canvasBaseUrl: normalizeCanvasBaseUrl(process.env.CANVAS_BASE_URL?.trim() || DEFAULT_BASE_URL),
     profileDir: resolveProfileDir(projectRoot),
     browserExecutablePath: browser.browserExecutablePath,
     browserName: browser.browserName

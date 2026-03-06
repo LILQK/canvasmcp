@@ -52,6 +52,25 @@ function parseNextLink(linkHeader: string | null): string | null {
   return null;
 }
 
+export function resolveCanvasApiUrl(baseUrl: string, pathOrUrl: string, searchParams?: URLSearchParams): string {
+  const base = new URL(baseUrl);
+  const isAbsolute = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(pathOrUrl);
+  const url = isAbsolute ? new URL(pathOrUrl) : new URL(pathOrUrl, `${base.origin}/`);
+
+  if (url.origin !== base.origin) {
+    throw new CanvasRequestError(`Canvas request blocked for unexpected origin: ${url.origin}`, 400, {
+      allowedOrigin: base.origin,
+      blockedUrl: url.toString()
+    });
+  }
+
+  if (searchParams) {
+    url.search = searchParams.toString();
+  }
+
+  return url.toString();
+}
+
 export class CanvasHttpClient {
   private readonly baseUrl: string;
   private readonly storageState: BrowserStorageState;
@@ -64,35 +83,17 @@ export class CanvasHttpClient {
   }
 
   private resolveUrl(pathOrUrl: string, searchParams?: URLSearchParams): string {
-    if (pathOrUrl.startsWith('http')) {
-      return pathOrUrl;
-    }
-
-    const base = new URL(this.baseUrl);
-    const url = new URL(pathOrUrl, `${base.origin}/`);
-    if (searchParams) {
-      url.search = searchParams.toString();
-    }
-
-    return url.toString();
+    return resolveCanvasApiUrl(this.baseUrl, pathOrUrl, searchParams);
   }
 
   async withRequestContext<T>(callback: (api: APIRequestContext) => Promise<T>): Promise<T> {
-    if (this.browserContext) {
-      const csrfToken = decodeCookieValue(
-        (await this.browserContext.cookies(this.baseUrl)).find((cookie) => cookie.name === '_csrf_token')?.value
-      );
-
-      if (csrfToken) {
-        await this.browserContext.setExtraHTTPHeaders({ 'X-CSRF-Token': csrfToken });
-      }
-      return callback(this.browserContext.request);
-    }
-
-    const csrfToken = extractCsrfTokenFromStorageState(this.storageState, this.baseUrl);
+    const storageState = this.browserContext ? await this.browserContext.storageState() : this.storageState;
+    const csrfToken = this.browserContext
+      ? decodeCookieValue((await this.browserContext.cookies(this.baseUrl)).find((cookie) => cookie.name === '_csrf_token')?.value)
+      : extractCsrfTokenFromStorageState(storageState, this.baseUrl);
     const api = await request.newContext({
       baseURL: this.baseUrl,
-      storageState: this.storageState,
+      storageState,
       extraHTTPHeaders: csrfToken ? { 'X-CSRF-Token': csrfToken } : undefined
     });
 
@@ -123,7 +124,7 @@ export class CanvasHttpClient {
       let pageCount = 0;
 
       while (nextUrl && pageCount < maxPages) {
-        const response = await api.get(nextUrl);
+        const response = await api.get(this.resolveUrl(nextUrl));
         if (response.status() === 401 || response.status() === 403) {
           throw new CanvasAuthError();
         }

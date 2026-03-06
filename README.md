@@ -176,6 +176,7 @@ Source: [Claude Code MCP docs](https://code.claude.com/docs/en/mcp)
 
 - Canvas base URL for your institution.
 - Example: `https://aula.uoc.edu`
+- Must use `https`.
 
 `CANVAS_PROFILE_DIR`
 
@@ -219,3 +220,8 @@ Run checks:
 pnpm typecheck
 pnpm test
 ```
+
+## Security Notes
+
+- Tool responses may include `html` fields returned by Canvas. Treat that HTML as untrusted content and sanitize it before rendering in any client UI.
+- The MCP only follows Canvas API requests on the configured `CANVAS_BASE_URL` origin.
