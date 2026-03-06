@@ -4,7 +4,7 @@
 [![npm downloads](https://img.shields.io/npm/dm/%40canvas-mcp%2Fserver)](https://www.npmjs.com/package/@canvas-mcp/server)
 [![GitHub stars](https://img.shields.io/github/stars/LILQK/canvasmcp?style=social)](https://github.com/LILQK/canvasmcp)
 [![GitHub issues](https://img.shields.io/github/issues/LILQK/canvasmcp)](https://github.com/LILQK/canvasmcp/issues)
-[![License](https://img.shields.io/badge/license-UNLICENSED-red)](./LICENSE)
+[![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
 Local MCP server for Canvas LMS instances. It runs over `stdio`, keeps a live browser session open while the MCP is running, and exposes a read-only tool surface for deadlines, announcements, modules, files, grades, and weekly planning.
 
@@ -252,4 +252,3 @@ By contributing, you agree that your contributions may be used in this project u
 
 - Tool responses may include `html` fields returned by Canvas. Treat that HTML as untrusted content and sanitize it before rendering in any client UI.
 - The MCP only follows Canvas API requests on the configured `CANVAS_BASE_URL` origin.
-

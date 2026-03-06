@@ -10,7 +10,7 @@ Agent-focused operating guide for this repository. This file complements [README
 - Repository: [LILQK/canvasmcp](https://github.com/LILQK/canvasmcp)
 - npm page: [@canvas-mcp/server](https://www.npmjs.com/package/@canvas-mcp/server)
 - Repository visibility: public
-- License posture: `UNLICENSED` / proprietary / all rights reserved
+- License posture: MIT
 - Runtime transport: `stdio`
 - Auth strategy: live Playwright browser session kept open while the MCP server is running
 
@@ -284,7 +284,7 @@ Release notes:
 - package scope is owned by the `canvas-mcp` org
 - package is public on npm
 - repo is public on GitHub
-- code license remains restrictive
+- code license is MIT
 
 ## Client Documentation
 
