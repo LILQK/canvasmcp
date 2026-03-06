@@ -1,6 +1,6 @@
 {
-  "name": "@canvas-uoc/canvasmcp",
-  "version": "0.1.0",
+  "name": "@canvas-mcp/server",
+  "version": "0.1.1",
   "type": "module",
   "packageManager": "pnpm@10.28.0",
   "engines": {

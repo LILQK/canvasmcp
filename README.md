@@ -30,7 +30,7 @@ One quick way to check is:
 Run the published package directly with `npx`:
 
 ```bash
-npx -y @canvas-uoc/canvasmcp run
+npx -y --package @canvas-mcp/server canvasmcp run
 ```
 
 When the server starts it opens a browser window automatically, waits for a valid Canvas session, and then keeps that window open while the MCP server is running. Do not close that browser window during use.
@@ -50,7 +50,9 @@ Replace `CANVAS_BASE_URL` with your university Canvas URL.
       "command": "npx",
       "args": [
         "-y",
-        "@canvas-uoc/canvasmcp",
+        "--package",
+        "@canvas-mcp/server",
+        "canvasmcp",
         "run"
       ],
       "env": {
@@ -72,7 +74,9 @@ Replace `CANVAS_BASE_URL` with your university Canvas URL.
       "command": "npx",
       "args": [
         "-y",
-        "@canvas-uoc/canvasmcp",
+        "--package",
+        "@canvas-mcp/server",
+        "canvasmcp",
         "run"
       ],
       "env": {
@@ -96,7 +100,9 @@ Windsurf uses `~/.codeium/windsurf/mcp_config.json`.
       "command": "npx",
       "args": [
         "-y",
-        "@canvas-uoc/canvasmcp",
+        "--package",
+        "@canvas-mcp/server",
+        "canvasmcp",
         "run"
       ],
       "env": {
@@ -123,7 +129,9 @@ VS Code supports MCP servers through `mcp.json`. Add this to your user or worksp
       "command": "npx",
       "args": [
         "-y",
-        "@canvas-uoc/canvasmcp",
+        "--package",
+        "@canvas-mcp/server",
+        "canvasmcp",
         "run"
       ],
       "env": {
@@ -143,7 +151,7 @@ Source: [VS Code MCP docs](https://code.visualstudio.com/docs/copilot/customizat
 Claude Code can add local stdio servers from the CLI. On Windows, the official docs note that `npx` often needs a `cmd /c` wrapper.
 
 ```bash
-claude mcp add-json canvasmcp "{\"type\":\"stdio\",\"command\":\"cmd\",\"args\":[\"/c\",\"npx\",\"-y\",\"@canvas-uoc/canvasmcp\",\"run\"],\"env\":{\"CANVAS_BASE_URL\":\"https://canvas.your-university.edu\",\"CANVAS_BROWSER_PATH\":\"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\",\"CANVAS_PROFILE_DIR\":\"D:\\\\canvasmcp\\\\.canvas-profile-claudecode\"}}"
+claude mcp add-json canvasmcp "{\"type\":\"stdio\",\"command\":\"cmd\",\"args\":[\"/c\",\"npx\",\"-y\",\"--package\",\"@canvas-mcp/server\",\"canvasmcp\",\"run\"],\"env\":{\"CANVAS_BASE_URL\":\"https://canvas.your-university.edu\",\"CANVAS_BROWSER_PATH\":\"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\",\"CANVAS_PROFILE_DIR\":\"D:\\\\canvasmcp\\\\.canvas-profile-claudecode\"}}"
 ```
 
 Source: [Claude Code MCP docs](https://code.claude.com/docs/en/mcp)
