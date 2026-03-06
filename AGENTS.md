@@ -1,56 +1,102 @@
 # AGENTS.md
 
-This file is the high-signal project briefing for coding agents working in this repository.
+Agent-focused operating guide for this repository. This file complements [README.md](D:/_Storage/_Storage/_Proyectos/canvasmcp/README.md) with project context, exact commands, implementation notes, and current gotchas.
 
-## Project Summary
+## Project Overview
 
 - Project: Canvas LMS MCP server
 - npm package: `@canvas-mcp/server`
 - Current package version: `0.1.2`
-- Repo: `https://github.com/LILQK/canvasmcp`
-- npm page: `https://www.npmjs.com/package/@canvas-mcp/server`
-- Runtime model: local MCP server over `stdio`
-- Auth model: live Playwright browser session kept open while the MCP runs
-- License posture: source-visible but proprietary / `UNLICENSED`
+- Repository: [LILQK/canvasmcp](https://github.com/LILQK/canvasmcp)
+- npm page: [@canvas-mcp/server](https://www.npmjs.com/package/@canvas-mcp/server)
+- Repository visibility: public
+- License posture: `UNLICENSED` / proprietary / all rights reserved
+- Runtime transport: `stdio`
+- Auth strategy: live Playwright browser session kept open while the MCP server is running
 
-This project started around UOC's Canvas instance, but it is now intended to work with any Canvas LMS deployment that:
-- uses HTTPS
-- exposes the standard authenticated Canvas API
-- grants a reusable browser session cookie after login
-
-The main configurable input is `CANVAS_BASE_URL`.
+The project started around UOC's Canvas instance, but runtime behavior is now intended to be Canvas-generic. The main runtime input is `CANVAS_BASE_URL`.
 
 ## Architecture
 
-Core flow:
+High-level flow:
 
-1. Client starts the MCP over `stdio`
+1. MCP client starts the server over `stdio`
 2. CLI entrypoint runs `canvasmcp run`
 3. Server opens a persistent Playwright browser context
-4. User logs into Canvas in that browser
-5. MCP validates session by calling Canvas API
+4. User completes login in the opened browser
+5. MCP validates session by calling Canvas API on the configured Canvas host
 6. Tools reuse that authenticated browser session for read-only API calls
 
-Main files:
+Key files:
 
 - [package.json](D:/_Storage/_Storage/_Proyectos/canvasmcp/package.json)
-  Package metadata, scripts, npm publish settings, CLI bin.
+  Package metadata, npm publishing settings, scripts, and CLI bin.
 - [src/cli.ts](D:/_Storage/_Storage/_Proyectos/canvasmcp/src/cli.ts)
   Minimal CLI dispatcher. Current supported command: `run`.
 - [src/server.ts](D:/_Storage/_Storage/_Proyectos/canvasmcp/src/server.ts)
-  MCP bootstrap over stdio.
+  MCP bootstrap over stdio. Version is synced from `package.json`.
 - [src/config.ts](D:/_Storage/_Storage/_Proyectos/canvasmcp/src/config.ts)
-  Environment parsing, project root resolution, browser detection, HTTPS enforcement.
+  Environment parsing, project-root resolution, browser detection, HTTPS enforcement.
 - [src/auth/browser-session.ts](D:/_Storage/_Storage/_Proyectos/canvasmcp/src/auth/browser-session.ts)
   Live browser/session orchestration and login wait loop.
 - [src/auth/session.ts](D:/_Storage/_Storage/_Proyectos/canvasmcp/src/auth/session.ts)
-  Playwright persistent context launcher.
+  Playwright persistent-context launcher.
 - [src/canvas/http.ts](D:/_Storage/_Storage/_Proyectos/canvasmcp/src/canvas/http.ts)
-  Canvas HTTP client, origin hardening, pagination.
+  Canvas HTTP client, same-origin hardening, pagination, request context handling.
 - [src/canvas/service.ts](D:/_Storage/_Storage/_Proyectos/canvasmcp/src/canvas/service.ts)
-  Canvas domain logic and tool-facing operations.
+  Canvas domain logic and tool-facing behavior.
 - [src/tools/register.ts](D:/_Storage/_Storage/_Proyectos/canvasmcp/src/tools/register.ts)
-  MCP tool registration and output schemas.
+  MCP tool registration and strict output schemas.
+
+## Setup Commands
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Run development server:
+
+```bash
+pnpm dev
+```
+
+Run compiled server:
+
+```bash
+pnpm start
+```
+
+Build:
+
+```bash
+pnpm build
+```
+
+The build always cleans `dist` first.
+
+## Environment Configuration
+
+Environment variables:
+
+- `CANVAS_BASE_URL`
+  Required in practice. Must use `https`. Example: `https://aula.uoc.edu`
+- `CANVAS_PROFILE_DIR`
+  Optional persistent browser profile path. Use a separate value per client.
+- `CANVAS_BROWSER_PATH`
+  Optional explicit browser executable path.
+
+Important rule:
+
+- Never share the same `CANVAS_PROFILE_DIR` across multiple clients simultaneously.
+
+Good profile examples:
+
+- Claude Desktop: `.canvas-profile-claude`
+- Cursor: `.canvas-profile-cursor`
+- Windsurf: `.canvas-profile-windsurf`
+- VS Code: `.canvas-profile-vscode`
 
 ## Supported Tools
 
@@ -76,30 +122,9 @@ Current tool surface:
 
 Intent:
 
-- read-only only
-- optimized for student workflow discovery
-- `get_weekly_digest` is the best tool for "what do I have next week?"
-
-## Configuration
-
-Environment variables:
-
-- `CANVAS_BASE_URL`
-  Required in practice. Must be HTTPS. Example: `https://aula.uoc.edu`
-- `CANVAS_PROFILE_DIR`
-  Optional persistent browser profile path. Use a separate value per client.
-- `CANVAS_BROWSER_PATH`
-  Optional explicit browser executable path.
-
-Important rule:
-
-- never share the same `CANVAS_PROFILE_DIR` across multiple clients at the same time
-
-Good examples:
-
-- Claude: `.canvas-profile-claude`
-- Cursor: `.canvas-profile-cursor`
-- Windsurf: `.canvas-profile-windsurf`
+- Read-only only
+- Optimized for student workload discovery
+- `get_weekly_digest` is the best general answer for "what do I have next week?"
 
 ## Client Invocation
 
@@ -109,7 +134,13 @@ Published invocation that works on Windows:
 npx -y --package @canvas-mcp/server canvasmcp run
 ```
 
-Do not assume `npx -y @canvas-mcp/server run` works on Windows. It was tested and failed to resolve the bin reliably.
+Do not assume this will work on Windows:
+
+```bash
+npx -y @canvas-mcp/server run
+```
+
+That shorter form was tested and failed to resolve the bin reliably on Windows.
 
 For local repo usage:
 
@@ -117,15 +148,9 @@ For local repo usage:
 node dist/src/cli.js run
 ```
 
-## Development Commands
+## Testing Instructions
 
-Install:
-
-```bash
-pnpm install
-```
-
-Checks:
+Run all checks:
 
 ```bash
 pnpm typecheck
@@ -133,27 +158,111 @@ pnpm test
 pnpm build
 ```
 
-Dev server:
-
-```bash
-pnpm dev
-```
-
-Compiled server:
-
-```bash
-pnpm start
-```
-
-Package locally:
+Packaging smoke test:
 
 ```bash
 npm pack
 ```
 
-## Release Flow
+Published-command smoke test:
 
-Typical release steps:
+```bash
+npx -y --package @canvas-mcp/server canvasmcp run
+```
+
+Recommended manual smoke tests after auth, HTTP, or tool changes:
+
+1. Start the MCP
+2. Log in successfully
+3. Verify:
+   - `get_auth_status`
+   - `get_profile`
+   - `list_current_courses`
+   - `get_weekly_digest`
+4. Re-check any tool you changed directly
+
+For security-related changes also verify:
+
+- same-origin pagination still works
+- login still works
+- nothing writes unexpected output to `stdout`
+
+## Code Style and Conventions
+
+- TypeScript, NodeNext modules, ESM only
+- Use strict schemas for MCP tool outputs
+- Keep logs on `stderr`, never `stdout`, or you may break the MCP protocol
+- Preserve the live-browser-session auth model unless explicitly redesigning auth
+- Favor small, targeted regressions fixes over broad rewrites
+- Do not assume UOC-specific URLs in runtime logic
+
+## Security Notes
+
+Current hardening already in code:
+
+- `CANVAS_BASE_URL` must use `https`
+- Canvas API requests are restricted to the configured origin
+- pagination links on other origins are rejected
+- HTML returned by Canvas is considered untrusted and should be sanitized by any UI rendering layer
+
+Important implementation detail:
+
+- When a live browser context exists, the code intentionally uses `browserContext.request`
+- A previous hardening pass switched all requests to `request.newContext(...)` and caused regressions
+
+## Login and Auth Notes
+
+Current login logic in [src/auth/browser-session.ts](D:/_Storage/_Storage/_Proyectos/canvasmcp/src/auth/browser-session.ts):
+
+- opens `CANVAS_BASE_URL`
+- waits for `canvas_session` cookie
+- waits until only one page remains and the active page is back on the configured Canvas host
+- waits an additional stability window before API validation
+
+This was added because some identity providers open temporary popups or extra tabs.
+
+What is still not solved:
+
+- Some identity-provider "trust this device" dialogs may still not persist correctly.
+- The remembered-device flow is likely sensitive to Playwright/Chromium launch behavior.
+
+## Known Quirks and Current Status
+
+### `get_course_files`
+
+This is not currently a confirmed session bug.
+
+What was verified with the real user session:
+
+- The endpoint `/api/v1/courses/:course_id/files` exists
+- With the user's UOC session it returns `403 Forbidden`
+- The body says the user is not authorized to perform that action
+
+Interpretation:
+
+- The route exists
+- The user session is valid
+- The issue is likely permissions on that endpoint for the current Canvas role, not expired auth
+
+If working on this again:
+
+- do not assume it is an auth failure
+- prefer surfacing a permission error or fallback behavior over "session expired"
+
+### Discussion topic `/view`
+
+Canvas discussion topic `/view` responses are not stable across instances.
+
+The code now handles both:
+
+- array of entries
+- object with `view` field containing entries
+
+If discussion tools break again, inspect the exact response shape before changing mapping logic.
+
+## Build, Packaging, and Release
+
+Typical release flow:
 
 1. Update `package.json` version
 2. Run:
@@ -169,91 +278,17 @@ Typical release steps:
 npm publish --access public --otp=CODE
 ```
 
-Notes:
+Release notes:
 
 - npm publishing requires OTP / 2FA
 - package scope is owned by the `canvas-mcp` org
-- package is public on npm, repo is public on GitHub, but code license is still restrictive
+- package is public on npm
+- repo is public on GitHub
+- code license remains restrictive
 
-## Security Decisions Already Made
+## Client Documentation
 
-Current hardening already in code:
-
-- `CANVAS_BASE_URL` must use `https`
-- Canvas HTTP requests are restricted to the configured origin
-- pagination links on other origins are rejected
-- tool responses may include HTML from Canvas, which should be treated as untrusted by any UI layer
-
-Important implementation detail:
-
-- When a live browser context exists, the code intentionally uses `browserContext.request`
-- A prior hardening attempt switched everything to `request.newContext(...)` and caused regressions
-
-## Known Issues
-
-Open known issues at the time this file was written:
-
-1. `get_course_files`
-   Still reported by the user as failing with:
-   `Canvas session missing or expired. Restart the MCP server and log in again when the browser window opens.`
-
-2. Trusted device / "remember this PC for 30 days"
-   The underlying university identity provider flow may open an extra prompt/modal to name the device.
-   That subflow is still unstable in this browser automation setup.
-
-3. Server version string mismatch
-   [src/server.ts](D:/_Storage/_Storage/_Proyectos/canvasmcp/src/server.ts) still declares MCP server version `0.1.0`.
-   Package version is already `0.1.2`.
-   If you touch release/versioning again, sync this.
-
-## Login Flow Notes
-
-Current login logic in [src/auth/browser-session.ts](D:/_Storage/_Storage/_Proyectos/canvasmcp/src/auth/browser-session.ts):
-
-- opens `CANVAS_BASE_URL`
-- waits for `canvas_session` cookie
-- waits until only one page remains and the active page is back on the configured Canvas host
-- waits an additional stability window before API validation
-
-This was added because some SSO providers open temporary popups or extra tabs.
-
-What is not solved yet:
-
-- certain identity-provider "trust this device" dialogs may still not persist correctly
-
-## Discussion View Quirk
-
-Canvas discussion topic `/view` responses are not stable across instances.
-
-The code now handles both:
-
-- array of entries
-- object with `view` field containing entries
-
-If discussion tools break again, inspect the exact response shape first before changing mapping logic.
-
-## Testing Guidance
-
-Good smoke tests after any auth, HTTP, or tool change:
-
-1. Start the MCP
-2. Log in successfully
-3. Verify:
-   - `get_auth_status`
-   - `get_profile`
-   - `list_current_courses`
-   - `get_weekly_digest`
-4. Re-check any tool you changed directly
-
-For security-related changes, also test:
-
-- origin validation still allows normal Canvas pagination
-- login still works
-- no unexpected output is emitted on `stdout`
-
-## Client Docs
-
-README already contains config examples for:
+README currently includes config examples for:
 
 - Claude Desktop
 - Cursor
@@ -261,24 +296,29 @@ README already contains config examples for:
 - Visual Studio Code
 - Claude Code
 
-If you update invocation or package naming, update README examples everywhere in one pass.
+If you change:
 
-## Coding Guidance For Agents
+- package name
+- CLI invocation
+- environment variables
+- client guidance
 
-- Preserve the live-browser-session model unless explicitly redesigning auth.
-- Prefer fixing regressions with minimal behavioral changes first.
-- Be careful when hardening request logic: Canvas has endpoint-specific quirks.
-- Do not assume UOC-specific URLs in runtime behavior.
-- Keep logs on `stderr`, not `stdout`, or you may break the MCP protocol.
-- If touching packaging, always test the actual published invocation pattern:
-  `npx -y --package @canvas-mcp/server canvasmcp run`
-- If touching versioning, keep package version, npm release, and docs aligned.
+then update all README examples in one pass.
+
+## Contributing and PR Expectations
+
+- Keep changes scoped and testable
+- Run `pnpm typecheck`, `pnpm test`, and `pnpm build` before committing
+- If you touch auth, HTTP, or packaging, also run a manual smoke test
+- For larger changes, prefer updating README and AGENTS.md together if user-facing behavior changes
 
 ## Suggested Next Fixes
 
 Highest-priority follow-ups:
 
-1. Fix `get_course_files`
-2. Sync internal MCP server version with package version
-3. Commit and publish README/license changes if they are not yet released
-4. Investigate a more browser-native auth flow if trusted-device persistence matters
+1. Decide whether `get_course_files` should:
+   - return a permission error clearly, or
+   - implement a fallback for student-visible attachments
+2. Improve handling of trusted-device / remembered-device flows
+3. Keep npm package version and published package aligned after each release
+4. Update AGENTS.md whenever release flow, auth flow, or packaging conventions change
