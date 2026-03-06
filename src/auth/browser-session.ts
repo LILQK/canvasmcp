@@ -25,8 +25,11 @@ export class BrowserSessionManager {
   private context: BrowserContext | null = null;
   private service: CanvasService | null = null;
   private authPromise: Promise<ProfileResult> | null = null;
+  private readonly canvasHost: string;
 
-  constructor(private readonly config: AppConfig) {}
+  constructor(private readonly config: AppConfig) {
+    this.canvasHost = new URL(config.canvasBaseUrl).hostname;
+  }
 
   private async ensureContext(): Promise<BrowserContext> {
     if (this.context) {
@@ -82,7 +85,7 @@ export class BrowserSessionManager {
     console.error(
       [
         `Opened ${this.config.canvasBaseUrl} in ${this.config.browserName}.`,
-        'Log in with your UOC account if needed.',
+        'Log in to your Canvas account if needed.',
         'Do not close this browser window while the MCP server is running.'
       ].join('\n')
     );
@@ -93,7 +96,7 @@ export class BrowserSessionManager {
       const activePage = pages[pages.length - 1] ?? page;
       const shouldValidate =
         (await hasCanvasSessionCookie(activePage, this.config.canvasBaseUrl)) &&
-        /aula\.uoc\.edu/i.test(activePage.url());
+        new URL(activePage.url()).hostname === this.canvasHost;
 
       if (!shouldValidate) {
         await activePage.waitForTimeout(3000);

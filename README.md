@@ -1,34 +1,152 @@
-# Canvas UOC Local MCP
+# Canvas LMS MCP
 
-Local MCP server for `https://aula.uoc.edu` built on the Canvas LMS API v1. It runs over `stdio`, keeps a live browser session open while the MCP is running, and exposes a read-only tool surface for deadlines, announcements, modules, files, grades, and weekly planning.
+Local MCP server for Canvas LMS instances. It runs over `stdio`, keeps a live browser session open while the MCP is running, and exposes a read-only tool surface for deadlines, announcements, modules, files, grades, and weekly planning.
+
+UOC is only an example Canvas deployment. Replace the base URL with your university Canvas URL.
+
+## Does My University Use Canvas?
+
+One quick way to check is:
+
+1. Go to [Canvas login discovery](https://www.instructure.com/canvas/login).
+2. Select `Students and Educators`.
+3. Search for your university name.
+4. If your institution appears, it is using Canvas.
 
 ## Requirements
 
-- Node.js 24+
-- `pnpm`
-- A local Chromium-based browser. The login flow now prefers an installed browser such as Chrome, Edge, Brave, Vivaldi, or Opera; it falls back to Playwright Chromium if none is detected.
+- Node.js 20+
+- A local Chromium-based browser. The login flow prefers an installed browser such as Chrome, Edge, Brave, Vivaldi, or Opera; it falls back to Playwright Chromium if none is detected.
 
-## Setup
+## Runtime Notes
 
-1. Install dependencies:
+- This MCP uses the standard Canvas web session and Canvas API.
+- It should work with many Canvas-based institutions, but the login experience can vary because each university may use different SSO or identity-provider flows.
+- The current implementation is not hardcoded to UOC anymore; it opens whatever `CANVAS_BASE_URL` you configure and validates the session against that Canvas host.
+- The main compatibility requirement is that, after login, the Canvas instance exposes the standard authenticated API and sets a reusable Canvas session cookie in the browser session.
 
-   ```bash
-   pnpm install
-   ```
+## Package Usage
 
-2. Create your local config:
+Run the published package directly with `npx`:
 
-   ```bash
-   copy .env.example .env
-   ```
+```bash
+npx -y @canvas-uoc/canvasmcp run
+```
 
-2. Start the MCP server:
+When the server starts it opens a browser window automatically, waits for a valid Canvas session, and then keeps that window open while the MCP server is running. Do not close that browser window during use.
 
-   ```bash
-   pnpm dev
-   ```
+## MCP Client Config
 
-When the server starts it opens a browser window automatically, waits for a valid UOC Canvas session, and then keeps that window open while the MCP server is running. Do not close that browser window during use.
+Use a dedicated `CANVAS_PROFILE_DIR` per client so multiple AI tools do not fight over the same browser profile.
+
+Replace `CANVAS_BASE_URL` with your university Canvas URL.
+
+### Claude Desktop
+
+```json
+{
+  "mcpServers": {
+    "canvasmcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@canvas-uoc/canvasmcp",
+        "run"
+      ],
+      "env": {
+        "CANVAS_BASE_URL": "https://canvas.your-university.edu",
+        "CANVAS_BROWSER_PATH": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "CANVAS_PROFILE_DIR": "D:\\canvasmcp\\.canvas-profile-claude"
+      }
+    }
+  }
+}
+```
+
+### Cursor
+
+```json
+{
+  "mcpServers": {
+    "canvasmcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@canvas-uoc/canvasmcp",
+        "run"
+      ],
+      "env": {
+        "CANVAS_BASE_URL": "https://canvas.your-university.edu",
+        "CANVAS_BROWSER_PATH": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "CANVAS_PROFILE_DIR": "D:\\canvasmcp\\.canvas-profile-cursor"
+      }
+    }
+  }
+}
+```
+
+### Windsurf
+
+Windsurf uses `~/.codeium/windsurf/mcp_config.json`.
+
+```json
+{
+  "mcpServers": {
+    "canvasmcp": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@canvas-uoc/canvasmcp",
+        "run"
+      ],
+      "env": {
+        "CANVAS_BASE_URL": "https://canvas.your-university.edu",
+        "CANVAS_BROWSER_PATH": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "CANVAS_PROFILE_DIR": "D:\\canvasmcp\\.canvas-profile-windsurf"
+      }
+    }
+  }
+}
+```
+
+Source: [Windsurf MCP docs](https://docs.windsurf.com/windsurf/cascade/mcp)
+
+### Visual Studio Code
+
+VS Code supports MCP servers through `mcp.json`. Add this to your user or workspace config:
+
+```json
+{
+  "servers": {
+    "canvasmcp": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@canvas-uoc/canvasmcp",
+        "run"
+      ],
+      "env": {
+        "CANVAS_BASE_URL": "https://canvas.your-university.edu",
+        "CANVAS_BROWSER_PATH": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
+        "CANVAS_PROFILE_DIR": "D:\\canvasmcp\\.canvas-profile-vscode"
+      }
+    }
+  }
+}
+```
+
+Source: [VS Code MCP docs](https://code.visualstudio.com/docs/copilot/customization/mcp-servers)
+
+### Claude Code
+
+Claude Code can add local stdio servers from the CLI. On Windows, the official docs note that `npx` often needs a `cmd /c` wrapper.
+
+```bash
+claude mcp add-json canvasmcp "{\"type\":\"stdio\",\"command\":\"cmd\",\"args\":[\"/c\",\"npx\",\"-y\",\"@canvas-uoc/canvasmcp\",\"run\"],\"env\":{\"CANVAS_BASE_URL\":\"https://canvas.your-university.edu\",\"CANVAS_BROWSER_PATH\":\"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\",\"CANVAS_PROFILE_DIR\":\"D:\\\\canvasmcp\\\\.canvas-profile-claudecode\"}}"
+```
+
+Source: [Claude Code MCP docs](https://code.claude.com/docs/en/mcp)
 
 ## Available Tools
 
@@ -50,9 +168,37 @@ When the server starts it opens a browser window automatically, waits for a vali
 - `search_course_content`
 - `get_weekly_digest`
 
-`get_weekly_digest` is the preferred tool for “what do I have next week?” style questions because assignments alone are often incomplete in UOC courses.
+`get_weekly_digest` is the preferred tool for “what do I have next week?” style questions because assignments alone are often incomplete in many Canvas courses.
+
+## Configuration
+
+`CANVAS_BASE_URL`
+
+- Canvas base URL for your institution.
+- Example: `https://aula.uoc.edu`
+
+`CANVAS_PROFILE_DIR`
+
+- Optional path to the Playwright persistent profile. Relative values are resolved from the project root.
+- Use a different value per client, for example `.canvas-profile-claude`, `.canvas-profile-cursor`, `.canvas-profile-windsurf`.
+
+`CANVAS_BROWSER_PATH`
+
+- Optional path to a specific browser executable if autodetection does not pick the browser you want.
 
 ## Local Development
+
+Install dependencies:
+
+```bash
+pnpm install
+```
+
+Create local config if needed:
+
+```bash
+copy .env.example .env
+```
 
 Start the MCP server in development:
 
@@ -73,33 +219,3 @@ Run checks:
 pnpm typecheck
 pnpm test
 ```
-
-## MCP Client Example
-
-Example `mcpServers` entry for a local client that supports `stdio`:
-
-```json
-{
-  "mcpServers": {
-    "canvas-uoc-local": {
-      "command": "pnpm",
-      "args": ["start"],
-      "cwd": "D:\\_Storage\\_Storage\\_Proyectos\\canvasmcp"
-    }
-  }
-}
-```
-
-## Configuration
-
-`CANVAS_BASE_URL`
-
-- Default: `https://aula.uoc.edu`
-
-`CANVAS_PROFILE_DIR`
-
-- Optional path to the Playwright persistent profile. Relative values are resolved from the project root.
-
-`CANVAS_BROWSER_PATH`
-
-- Optional path to a specific browser executable if autodetection does not pick the browser you want.

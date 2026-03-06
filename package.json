@@ -1,18 +1,28 @@
 {
-  "name": "canvasmcp",
+  "name": "@canvas-uoc/canvasmcp",
   "version": "0.1.0",
-  "private": true,
   "type": "module",
   "packageManager": "pnpm@10.28.0",
   "engines": {
-    "node": ">=24.13.1"
+    "node": ">=20"
   },
+  "bin": {
+    "canvasmcp": "dist/src/cli.js"
+  },
+  "files": [
+    "dist/src",
+    "README.md",
+    ".env.example",
+    "package.json"
+  ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "clean": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\"",
+    "build": "pnpm clean && tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "start": "node --enable-source-maps dist/src/index.js",
-    "dev": "tsx src/index.ts",
-    "test": "vitest run"
+    "start": "node --enable-source-maps dist/src/cli.js run",
+    "dev": "tsx src/cli.ts run",
+    "test": "vitest run",
+    "prepack": "pnpm build"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "1.27.1",

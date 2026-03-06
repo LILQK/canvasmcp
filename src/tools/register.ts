@@ -54,7 +54,7 @@ export function registerTools(
   server.registerTool(
     'get_auth_status',
     {
-      description: 'Use this when you need to verify whether the local UOC Canvas session is configured and still valid.',
+      description: 'Use this when you need to verify whether the local Canvas session is configured and still valid.',
       annotations: readOnlyAnnotations,
       outputSchema: {
         isAuthenticated: z.boolean(),
@@ -115,7 +115,7 @@ export function registerTools(
   server.registerTool(
     'list_current_courses',
     {
-      description: 'Use this when you need the user courses from UOC Canvas, filtered to active courses by default.',
+      description: 'Use this when you need the user courses from Canvas, filtered to active courses by default.',
       annotations: readOnlyAnnotations,
       inputSchema: {
         includeHistorical: z.boolean().default(false)
