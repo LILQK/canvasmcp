@@ -1,0 +1,8 @@
+node_modules
+dist
+.env
+.canvas-profile
+.canvas-profile-*
+playwright-report
+test-results
+coverage
