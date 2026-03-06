@@ -1,6 +1,19 @@
 # Canvas LMS MCP
 
+[![npm version](https://img.shields.io/npm/v/%40canvas-mcp%2Fserver)](https://www.npmjs.com/package/@canvas-mcp/server)
+[![npm downloads](https://img.shields.io/npm/dm/%40canvas-mcp%2Fserver)](https://www.npmjs.com/package/@canvas-mcp/server)
+[![GitHub stars](https://img.shields.io/github/stars/LILQK/canvasmcp?style=social)](https://github.com/LILQK/canvasmcp)
+[![GitHub issues](https://img.shields.io/github/issues/LILQK/canvasmcp)](https://github.com/LILQK/canvasmcp/issues)
+[![License](https://img.shields.io/badge/license-UNLICENSED-red)](./LICENSE)
+
 Local MCP server for Canvas LMS instances. It runs over `stdio`, keeps a live browser session open while the MCP is running, and exposes a read-only tool surface for deadlines, announcements, modules, files, grades, and weekly planning.
+
+## Highlights
+
+- Works with Canvas LMS web sessions and the standard Canvas API.
+- Supports weekly planning, assignments, announcements, modules, files, grades, and content search.
+- Runs locally over `stdio` and opens a live browser session for authentication.
+- Published on npm as [`@canvas-mcp/server`](https://www.npmjs.com/package/@canvas-mcp/server).
 
 UOC is only an example Canvas deployment. Replace the base URL with your university Canvas URL.
 
@@ -229,7 +242,14 @@ pnpm typecheck
 pnpm test
 ```
 
+## Contributing
+
+Issues and pull requests are welcome for bug reports, fixes, and compatibility improvements.
+
+By contributing, you agree that your contributions may be used in this project under the repository license and ownership terms. If you want to propose a larger change, open an issue first so the approach can be discussed before implementation.
+
 ## Security Notes
 
 - Tool responses may include `html` fields returned by Canvas. Treat that HTML as untrusted content and sanitize it before rendering in any client UI.
 - The MCP only follows Canvas API requests on the configured `CANVAS_BASE_URL` origin.
+
