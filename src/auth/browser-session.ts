@@ -6,9 +6,19 @@ import type { ProfileResult } from '../canvas/types.js';
 import { readAuthState } from './state.js';
 import { launchPersistentCanvasContext } from './session.js';
 
+const LOGIN_STABILITY_MS = 4000;
+
 async function hasCanvasSessionCookie(page: Page, baseUrl: string): Promise<boolean> {
   const cookies = await page.context().cookies(baseUrl);
   return cookies.some((cookie) => cookie.name === 'canvas_session');
+}
+
+function getPageHostname(page: Page): string | null {
+  try {
+    return new URL(page.url()).hostname;
+  } catch {
+    return null;
+  }
 }
 
 export interface AuthStatusResult extends Record<string, unknown> {
@@ -26,6 +36,7 @@ export class BrowserSessionManager {
   private service: CanvasService | null = null;
   private authPromise: Promise<ProfileResult> | null = null;
   private readonly canvasHost: string;
+  private stableCanvasSince: number | null = null;
 
   constructor(private readonly config: AppConfig) {
     this.canvasHost = new URL(config.canvasBaseUrl).hostname;
@@ -86,6 +97,7 @@ export class BrowserSessionManager {
       [
         `Opened ${this.config.canvasBaseUrl} in ${this.config.browserName}.`,
         'Log in to your Canvas account if needed.',
+        'If your identity provider asks to trust or remember this device, finish that prompt before returning to Canvas.',
         'Do not close this browser window while the MCP server is running.'
       ].join('\n')
     );
@@ -94,12 +106,25 @@ export class BrowserSessionManager {
     while (Date.now() < timeoutAt) {
       const pages = context.pages();
       const activePage = pages[pages.length - 1] ?? page;
-      const shouldValidate =
-        (await hasCanvasSessionCookie(activePage, this.config.canvasBaseUrl)) &&
-        new URL(activePage.url()).hostname === this.canvasHost;
+      const activeHost = getPageHostname(activePage);
+      const hasOnlyCanvasPage = pages.length === 1 && activeHost === this.canvasHost;
+      const hasCanvasSession =
+        activeHost === this.canvasHost && (await hasCanvasSessionCookie(activePage, this.config.canvasBaseUrl));
 
-      if (!shouldValidate) {
+      if (!hasOnlyCanvasPage || !hasCanvasSession) {
+        this.stableCanvasSince = null;
         await activePage.waitForTimeout(3000);
+        continue;
+      }
+
+      if (this.stableCanvasSince === null) {
+        this.stableCanvasSince = Date.now();
+        await activePage.waitForTimeout(LOGIN_STABILITY_MS);
+        continue;
+      }
+
+      if (Date.now() - this.stableCanvasSince < LOGIN_STABILITY_MS) {
+        await activePage.waitForTimeout(1000);
         continue;
       }
 
@@ -114,6 +139,7 @@ export class BrowserSessionManager {
         }
       }
 
+      this.stableCanvasSince = null;
       await activePage.waitForTimeout(5000);
     }
 
