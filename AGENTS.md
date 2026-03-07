@@ -6,7 +6,7 @@ Agent-focused operating guide for this repository. This file complements [README
 
 - Project: Canvas LMS MCP server
 - npm package: `@canvas-mcp/server`
-- Current package version: `0.1.3`
+- Current package version: `0.1.4`
 - Repository: [LILQK/canvasmcp](https://github.com/LILQK/canvasmcp)
 - npm page: [@canvas-mcp/server](https://www.npmjs.com/package/@canvas-mcp/server)
 - Repository visibility: public
