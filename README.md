@@ -50,7 +50,13 @@ When the server starts it opens a browser window automatically, waits for a vali
 
 ## MCP Client Config
 
-Use a dedicated `CANVAS_PROFILE_DIR` per client so multiple AI tools do not fight over the same browser profile.
+By default, this project stores a persistent profile in an OS-standard user directory:
+
+- Windows: `%LOCALAPPDATA%\canvas-mcp\profile`
+- macOS: `~/Library/Application Support/canvas-mcp/profile`
+- Linux: `~/.config/canvas-mcp/profile`
+
+You can still override it with `CANVAS_PROFILE_DIR` if needed.
 
 Replace `CANVAS_BASE_URL` with your university Canvas URL.
 
@@ -69,9 +75,7 @@ Replace `CANVAS_BASE_URL` with your university Canvas URL.
         "run"
       ],
       "env": {
-        "CANVAS_BASE_URL": "https://canvas.your-university.edu",
-        "CANVAS_BROWSER_PATH": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-        "CANVAS_PROFILE_DIR": "D:\\canvasmcp\\.canvas-profile-claude"
+        "CANVAS_BASE_URL": "https://canvas.your-university.edu"
       }
     }
   }
@@ -93,9 +97,7 @@ Replace `CANVAS_BASE_URL` with your university Canvas URL.
         "run"
       ],
       "env": {
-        "CANVAS_BASE_URL": "https://canvas.your-university.edu",
-        "CANVAS_BROWSER_PATH": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-        "CANVAS_PROFILE_DIR": "D:\\canvasmcp\\.canvas-profile-cursor"
+        "CANVAS_BASE_URL": "https://canvas.your-university.edu"
       }
     }
   }
@@ -119,9 +121,7 @@ Windsurf uses `~/.codeium/windsurf/mcp_config.json`.
         "run"
       ],
       "env": {
-        "CANVAS_BASE_URL": "https://canvas.your-university.edu",
-        "CANVAS_BROWSER_PATH": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-        "CANVAS_PROFILE_DIR": "D:\\canvasmcp\\.canvas-profile-windsurf"
+        "CANVAS_BASE_URL": "https://canvas.your-university.edu"
       }
     }
   }
@@ -148,9 +148,7 @@ VS Code supports MCP servers through `mcp.json`. Add this to your user or worksp
         "run"
       ],
       "env": {
-        "CANVAS_BASE_URL": "https://canvas.your-university.edu",
-        "CANVAS_BROWSER_PATH": "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
-        "CANVAS_PROFILE_DIR": "D:\\canvasmcp\\.canvas-profile-vscode"
+        "CANVAS_BASE_URL": "https://canvas.your-university.edu"
       }
     }
   }
@@ -164,7 +162,7 @@ Source: [VS Code MCP docs](https://code.visualstudio.com/docs/copilot/customizat
 Claude Code can add local stdio servers from the CLI. On Windows, the official docs note that `npx` often needs a `cmd /c` wrapper.
 
 ```bash
-claude mcp add-json canvasmcp "{\"type\":\"stdio\",\"command\":\"cmd\",\"args\":[\"/c\",\"npx\",\"-y\",\"--package\",\"@canvas-mcp/server\",\"canvasmcp\",\"run\"],\"env\":{\"CANVAS_BASE_URL\":\"https://canvas.your-university.edu\",\"CANVAS_BROWSER_PATH\":\"C:\\\\Program Files\\\\Google\\\\Chrome\\\\Application\\\\chrome.exe\",\"CANVAS_PROFILE_DIR\":\"D:\\\\canvasmcp\\\\.canvas-profile-claudecode\"}}"
+claude mcp add-json canvasmcp "{\"type\":\"stdio\",\"command\":\"cmd\",\"args\":[\"/c\",\"npx\",\"-y\",\"--package\",\"@canvas-mcp/server\",\"canvasmcp\",\"run\"],\"env\":{\"CANVAS_BASE_URL\":\"https://canvas.your-university.edu\"}}"
 ```
 
 Source: [Claude Code MCP docs](https://code.claude.com/docs/en/mcp)
@@ -201,12 +199,12 @@ Source: [Claude Code MCP docs](https://code.claude.com/docs/en/mcp)
 
 `CANVAS_PROFILE_DIR`
 
-- Optional path to the Playwright persistent profile. Relative values are resolved from the project root.
-- Use a different value per client, for example `.canvas-profile-claude`, `.canvas-profile-cursor`, `.canvas-profile-windsurf`.
+- Optional path to the Playwright persistent profile. If omitted, the MCP uses an OS-standard location in your user directory.
+- Relative values are resolved from the project root.
 
 `CANVAS_BROWSER_PATH`
 
-- Optional path to a specific browser executable if autodetection does not pick the browser you want.
+- Optional path to a specific browser executable. In normal usage you should not need this; the MCP auto-detects common local browsers and falls back to Playwright Chromium.
 
 ## Local Development
 

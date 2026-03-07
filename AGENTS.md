@@ -6,7 +6,7 @@ Agent-focused operating guide for this repository. This file complements [README
 
 - Project: Canvas LMS MCP server
 - npm package: `@canvas-mcp/server`
-- Current package version: `0.1.2`
+- Current package version: `0.1.3`
 - Repository: [LILQK/canvasmcp](https://github.com/LILQK/canvasmcp)
 - npm page: [@canvas-mcp/server](https://www.npmjs.com/package/@canvas-mcp/server)
 - Repository visibility: public
@@ -83,20 +83,18 @@ Environment variables:
 - `CANVAS_BASE_URL`
   Required in practice. Must use `https`. Example: `https://aula.uoc.edu`
 - `CANVAS_PROFILE_DIR`
-  Optional persistent browser profile path. Use a separate value per client.
+  Optional persistent browser profile path.
+  If omitted, the server uses OS-default user locations:
+  - Windows: `%LOCALAPPDATA%\canvas-mcp\profile`
+  - macOS: `~/Library/Application Support/canvas-mcp/profile`
+  - Linux: `~/.config/canvas-mcp/profile`
 - `CANVAS_BROWSER_PATH`
   Optional explicit browser executable path.
+  In normal usage this should not be needed: browser binaries are auto-detected, with fallback to Playwright Chromium.
 
 Important rule:
 
-- Never share the same `CANVAS_PROFILE_DIR` across multiple clients simultaneously.
-
-Good profile examples:
-
-- Claude Desktop: `.canvas-profile-claude`
-- Cursor: `.canvas-profile-cursor`
-- Windsurf: `.canvas-profile-windsurf`
-- VS Code: `.canvas-profile-vscode`
+- If multiple clients run at the same time, assign a different `CANVAS_PROFILE_DIR` for each one.
 
 ## Supported Tools
 

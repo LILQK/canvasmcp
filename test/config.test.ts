@@ -1,4 +1,5 @@
 import path from 'node:path';
+import { homedir } from 'node:os';
 import { afterEach, describe, expect, it } from 'vitest';
 import { getConfig, normalizeCanvasBaseUrl, resolveProfileDir } from '../src/config.js';
 
@@ -13,19 +14,32 @@ describe('config', () => {
     process.env.CANVAS_BROWSER_PATH = originalBrowserPath;
   });
 
-  it('resolves the default profile dir relative to the project root', () => {
-    expect(resolveProfileDir('D:/workspace/project')).toBe(path.resolve('D:/workspace/project', '.canvas-profile'));
+  it('resolves the default profile dir in an OS-standard user location', () => {
+    const expected =
+      process.platform === 'win32'
+        ? path.join(process.env.LOCALAPPDATA ?? path.join(homedir(), 'AppData', 'Local'), 'canvas-mcp', 'profile')
+        : process.platform === 'darwin'
+          ? path.join(homedir(), 'Library', 'Application Support', 'canvas-mcp', 'profile')
+          : path.join(homedir(), '.config', 'canvas-mcp', 'profile');
+
+    expect(resolveProfileDir('D:/workspace/project')).toBe(expected);
   });
 
   it('applies configured values', () => {
+    const projectRoot = path.join(path.sep, 'tmp', 'workspace', 'project');
+    const browserPath =
+      process.platform === 'win32'
+        ? 'C:\\Browsers\\Chrome\\chrome.exe'
+        : '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+
     process.env.CANVAS_BASE_URL = 'https://aula.uoc.edu/';
     process.env.CANVAS_PROFILE_DIR = 'custom-profile';
-    process.env.CANVAS_BROWSER_PATH = 'C:/Browsers/Chrome/chrome.exe';
+    process.env.CANVAS_BROWSER_PATH = browserPath;
 
-    expect(getConfig('D:/workspace/project')).toEqual({
+    expect(getConfig(projectRoot)).toEqual({
       canvasBaseUrl: 'https://aula.uoc.edu',
-      profileDir: path.resolve('D:/workspace/project', 'custom-profile'),
-      browserExecutablePath: 'C:/Browsers/Chrome/chrome.exe',
+      profileDir: path.resolve(projectRoot, 'custom-profile'),
+      browserExecutablePath: browserPath,
       browserName: 'Configured browser'
     });
   });
