@@ -8,6 +8,8 @@
 
 Local MCP server for Canvas LMS instances. It runs over `stdio`, keeps a live browser session open while the MCP is running, and exposes a read-only tool surface for deadlines, announcements, modules, files, grades, and weekly planning.
 
+[![Star History Chart](https://api.star-history.com/svg?repos=LILQK/canvasmcp&type=Date)](https://www.star-history.com/#LILQK/canvasmcp&Date)
+
 ## Highlights
 
 - Works with Canvas LMS web sessions and the standard Canvas API.
