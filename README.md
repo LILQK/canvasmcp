@@ -182,6 +182,32 @@ Source: [Claude Code MCP docs](https://code.claude.com/docs/en/mcp)
 
 </details>
 
+<details>
+<summary>Codex</summary>
+
+Codex supports MCP server setup from the CLI or directly in `~/.codex/config.toml`. The configuration is shared between the CLI and the app/IDE extension.
+
+CLI:
+
+```bash
+codex mcp add canvasmcp --env CANVAS_BASE_URL=https://canvas.your-university.edu -- npx -y --package @canvas-mcp/server canvasmcp run
+```
+
+Config file:
+
+```toml
+[mcp_servers.canvasmcp]
+command = "npx"
+args = ["-y", "--package", "@canvas-mcp/server", "canvasmcp", "run"]
+
+[mcp_servers.canvasmcp.env]
+CANVAS_BASE_URL = "https://canvas.your-university.edu"
+```
+
+Source: [OpenAI Codex MCP docs](https://developers.openai.com/resources/docs-mcp)
+
+</details>
+
 ## Available Tools
 
 - `get_auth_status`
