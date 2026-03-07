@@ -60,7 +60,8 @@ You can still override it with `CANVAS_PROFILE_DIR` if needed.
 
 Replace `CANVAS_BASE_URL` with your university Canvas URL.
 
-### Claude Desktop
+<details>
+<summary>Claude Desktop</summary>
 
 ```json
 {
@@ -82,7 +83,10 @@ Replace `CANVAS_BASE_URL` with your university Canvas URL.
 }
 ```
 
-### Cursor
+</details>
+
+<details>
+<summary>Cursor</summary>
 
 ```json
 {
@@ -104,7 +108,10 @@ Replace `CANVAS_BASE_URL` with your university Canvas URL.
 }
 ```
 
-### Windsurf
+</details>
+
+<details>
+<summary>Windsurf</summary>
 
 Windsurf uses `~/.codeium/windsurf/mcp_config.json`.
 
@@ -130,7 +137,10 @@ Windsurf uses `~/.codeium/windsurf/mcp_config.json`.
 
 Source: [Windsurf MCP docs](https://docs.windsurf.com/windsurf/cascade/mcp)
 
-### Visual Studio Code
+</details>
+
+<details>
+<summary>Visual Studio Code</summary>
 
 VS Code supports MCP servers through `mcp.json`. Add this to your user or workspace config:
 
@@ -157,7 +167,10 @@ VS Code supports MCP servers through `mcp.json`. Add this to your user or worksp
 
 Source: [VS Code MCP docs](https://code.visualstudio.com/docs/copilot/customization/mcp-servers)
 
-### Claude Code
+</details>
+
+<details>
+<summary>Claude Code</summary>
 
 Claude Code can add local stdio servers from the CLI. On Windows, the official docs note that `npx` often needs a `cmd /c` wrapper.
 
@@ -166,6 +179,8 @@ claude mcp add-json canvasmcp "{\"type\":\"stdio\",\"command\":\"cmd\",\"args\":
 ```
 
 Source: [Claude Code MCP docs](https://code.claude.com/docs/en/mcp)
+
+</details>
 
 ## Available Tools
 
