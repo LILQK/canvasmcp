@@ -8,8 +8,8 @@ import { launchPersistentCanvasContext } from './session.js';
 
 const LOGIN_STABILITY_MS = 4000;
 
-async function hasCanvasSessionCookie(page: Page, baseUrl: string): Promise<boolean> {
-  const cookies = await page.context().cookies(baseUrl);
+async function hasCanvasSessionCookie(context: BrowserContext, baseUrl: string): Promise<boolean> {
+  const cookies = await context.cookies(baseUrl);
   return cookies.some((cookie) => cookie.name === 'canvas_session');
 }
 
@@ -19,6 +19,17 @@ function getPageHostname(page: Page): string | null {
   } catch {
     return null;
   }
+}
+
+function findMostRecentCanvasPage(pages: Page[], canvasHost: string): Page | null {
+  for (let index = pages.length - 1; index >= 0; index -= 1) {
+    const candidate = pages[index];
+    if (getPageHostname(candidate) === canvasHost) {
+      return candidate;
+    }
+  }
+
+  return null;
 }
 
 export interface AuthStatusResult extends Record<string, unknown> {
@@ -37,6 +48,7 @@ export class BrowserSessionManager {
   private authPromise: Promise<ProfileResult> | null = null;
   private readonly canvasHost: string;
   private stableCanvasSince: number | null = null;
+  private warnedHostMismatch = false;
 
   constructor(private readonly config: AppConfig) {
     this.canvasHost = new URL(config.canvasBaseUrl).hostname;
@@ -90,8 +102,24 @@ export class BrowserSessionManager {
 
   private async runInteractiveLogin(): Promise<ProfileResult> {
     const context = await this.ensureContext();
-    const page = context.pages()[0] ?? (await context.newPage());
-    await page.goto(this.config.canvasBaseUrl, { waitUntil: 'domcontentloaded' });
+    const service = await this.ensureService();
+
+    // Fast path: if the persistent profile already has a valid session, do not trigger a new login navigation.
+    try {
+      const profile = await service.getProfile();
+      console.error(`Authenticated as ${profile.name} (${profile.loginId ?? 'unknown login'}).`);
+      return profile;
+    } catch (error) {
+      if (!(error instanceof CanvasAuthError)) {
+        throw error;
+      }
+    }
+
+    const existingCanvasPage = findMostRecentCanvasPage(context.pages(), this.canvasHost);
+    const page = existingCanvasPage ?? context.pages()[0] ?? (await context.newPage());
+    if (getPageHostname(page) !== this.canvasHost) {
+      await page.goto(this.config.canvasBaseUrl, { waitUntil: 'domcontentloaded' });
+    }
 
     console.error(
       [
@@ -106,12 +134,21 @@ export class BrowserSessionManager {
     while (Date.now() < timeoutAt) {
       const pages = context.pages();
       const activePage = pages[pages.length - 1] ?? page;
-      const activeHost = getPageHostname(activePage);
-      const hasOnlyCanvasPage = pages.length === 1 && activeHost === this.canvasHost;
-      const hasCanvasSession =
-        activeHost === this.canvasHost && (await hasCanvasSessionCookie(activePage, this.config.canvasBaseUrl));
+      const canvasPage = findMostRecentCanvasPage(pages, this.canvasHost);
+      const hasCanvasSession = await hasCanvasSessionCookie(context, this.config.canvasBaseUrl);
+      const canvasSessionDomains = (await context.cookies())
+        .filter((cookie) => cookie.name === 'canvas_session')
+        .map((cookie) => cookie.domain.replace(/^\./, ''));
 
-      if (!hasOnlyCanvasPage || !hasCanvasSession) {
+      if (!hasCanvasSession && canvasSessionDomains.length > 0 && !this.warnedHostMismatch) {
+        this.warnedHostMismatch = true;
+        console.error(
+          `Detected canvas_session cookie for ${[...new Set(canvasSessionDomains)].join(', ')}, but not for configured host ${this.canvasHost}. ` +
+            'Check CANVAS_BASE_URL and use the exact Canvas host shown after login (for UOC usually https://aula.uoc.edu).'
+        );
+      }
+
+      if (!canvasPage || !hasCanvasSession) {
         this.stableCanvasSince = null;
         await activePage.waitForTimeout(3000);
         continue;
@@ -143,7 +180,10 @@ export class BrowserSessionManager {
       await activePage.waitForTimeout(5000);
     }
 
-    throw new Error('Timed out waiting for a valid Canvas session during MCP startup.');
+    throw new Error(
+      `Timed out waiting for a valid Canvas session during MCP startup for ${this.config.canvasBaseUrl}. ` +
+        'If login completes but detection fails, verify CANVAS_BASE_URL matches the exact Canvas host used after SSO (for UOC: https://aula.uoc.edu).'
+    );
   }
 
   async getService(): Promise<CanvasService> {
