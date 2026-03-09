@@ -18,6 +18,9 @@ import type {
   CanvasAssignment,
   CanvasAttachment,
   CanvasCalendarEvent,
+  CanvasConversation,
+  CanvasConversationMessage,
+  CanvasConversationParticipant,
   CanvasCourse,
   CanvasDiscussionEntry,
   CanvasDiscussionTopic,
@@ -28,6 +31,10 @@ import type {
   CanvasModuleItem,
   CanvasPlannerItem,
   CanvasProfile,
+  ConversationDetailResult,
+  ConversationMessageResult,
+  ConversationParticipantResult,
+  ConversationSummaryResult,
   CourseActivityResult,
   CourseResult,
   DigestItemResult,
@@ -71,6 +78,58 @@ function mapFiles(files: CanvasAttachment[] | CanvasFile[] | null | undefined): 
     previewUrl: file.preview_url ?? null,
     updatedAt: normalizeDateTime(file.updated_at ?? ('modified_at' in file ? file.modified_at ?? null : null))
   }));
+}
+
+function mapConversationParticipant(participant: CanvasConversationParticipant): ConversationParticipantResult {
+  return {
+    id: participant.id,
+    name: participant.name ?? null,
+    fullName: participant.full_name ?? null,
+    pronouns: participant.pronouns ?? null,
+    avatarUrl: participant.avatar_url ?? null
+  };
+}
+
+function mapConversationMessage(message: CanvasConversationMessage): ConversationMessageResult {
+  return {
+    id: message.id,
+    authorId: message.author_id ?? null,
+    body: {
+      html: message.body ?? null,
+      text: stripHtml(message.body)
+    },
+    createdAt: normalizeDateTime(message.created_at ?? null),
+    generated: message.generated ?? null,
+    participatingUserIds: message.participating_user_ids ?? [],
+    attachments: mapFiles(message.attachments)
+  };
+}
+
+function mapConversationSummary(conversation: CanvasConversation): ConversationSummaryResult {
+  return {
+    id: conversation.id,
+    subject: conversation.subject ?? null,
+    workflowState: conversation.workflow_state ?? null,
+    lastMessage: {
+      html: conversation.last_message ?? null,
+      text: stripHtml(conversation.last_message)
+    },
+    lastMessageAt: normalizeDateTime(conversation.last_message_at ?? null),
+    lastAuthoredMessage: {
+      html: conversation.last_authored_message ?? null,
+      text: stripHtml(conversation.last_authored_message)
+    },
+    lastAuthoredMessageAt: normalizeDateTime(conversation.last_authored_message_at ?? null),
+    messageCount: conversation.message_count ?? null,
+    subscribed: conversation.subscribed ?? null,
+    isPrivate: conversation.private ?? null,
+    starred: conversation.starred ?? null,
+    visible: conversation.visible ?? null,
+    contextName: conversation.context_name ?? null,
+    contextCode: conversation.context_code ?? null,
+    audience: conversation.audience ?? [],
+    participants: (conversation.participants ?? []).map(mapConversationParticipant)
+  };
 }
 
 function confidenceFromScore(score: number): 'high' | 'medium' | 'low' {
@@ -171,6 +230,51 @@ export class CanvasService {
       startAt: course.start_at ?? course.term?.start_at ?? null,
       endAt: course.end_at ?? course.term?.end_at ?? null
     }));
+  }
+
+  async listConversations(scope: 'inbox' | 'sent' | 'archived', limit = 20): Promise<ConversationSummaryResult[]> {
+    const params = new URLSearchParams();
+    params.append('scope', scope);
+    params.append('per_page', String(Math.max(limit, 1)));
+
+    const conversations = await this.client.getPaginatedJson<CanvasConversation>('/api/v1/conversations', params, 3);
+    return conversations.slice(0, limit).map(mapConversationSummary);
+  }
+
+  async getConversationDetail(conversationId: number): Promise<ConversationDetailResult> {
+    const params = new URLSearchParams();
+    params.append('include[]', 'participants');
+    params.append('include[]', 'messages');
+
+    const conversation = await this.client.withRequestContext((api) =>
+      this.client.getJson<CanvasConversation>(api, `/api/v1/conversations/${conversationId}`, params)
+    );
+
+    return {
+      id: conversation.id,
+      subject: conversation.subject ?? null,
+      workflowState: conversation.workflow_state ?? null,
+      messageCount: conversation.message_count ?? null,
+      subscribed: conversation.subscribed ?? null,
+      isPrivate: conversation.private ?? null,
+      starred: conversation.starred ?? null,
+      visible: conversation.visible ?? null,
+      contextName: conversation.context_name ?? null,
+      contextCode: conversation.context_code ?? null,
+      audience: conversation.audience ?? [],
+      participants: (conversation.participants ?? []).map(mapConversationParticipant),
+      messages: (conversation.messages ?? []).map(mapConversationMessage),
+      lastMessage: {
+        html: conversation.last_message ?? null,
+        text: stripHtml(conversation.last_message)
+      },
+      lastMessageAt: normalizeDateTime(conversation.last_message_at ?? null),
+      lastAuthoredMessage: {
+        html: conversation.last_authored_message ?? null,
+        text: stripHtml(conversation.last_authored_message)
+      },
+      lastAuthoredMessageAt: normalizeDateTime(conversation.last_authored_message_at ?? null)
+    };
   }
 
   async getCourseAnnouncements(courseId: number, limit = 10, since?: string): Promise<AnnouncementResult[]> {

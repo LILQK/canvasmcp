@@ -6,12 +6,12 @@
 [![GitHub issues](https://img.shields.io/github/issues/LILQK/canvasmcp)](https://github.com/LILQK/canvasmcp/issues)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
-Local MCP server for Canvas LMS instances. It runs over `stdio`, keeps a live browser session open while the MCP is running, and exposes a read-only tool surface for deadlines, announcements, modules, files, grades, and weekly planning.
+Local MCP server for Canvas LMS instances. It runs over `stdio`, keeps a live browser session open while the MCP is running, and exposes a read-only tool surface for deadlines, announcements, inbox conversations, modules, files, grades, and weekly planning.
 
 ## Highlights
 
 - Works with Canvas LMS web sessions and the standard Canvas API.
-- Supports weekly planning, assignments, announcements, modules, files, grades, and content search.
+- Supports weekly planning, assignments, announcements, inbox conversations, modules, files, grades, and content search.
 - Runs locally over `stdio` and opens a live browser session for authentication.
 - Published on npm as [`@canvas-mcp/server`](https://www.npmjs.com/package/@canvas-mcp/server).
 
@@ -212,6 +212,8 @@ Source: [OpenAI Codex MCP docs](https://developers.openai.com/resources/docs-mcp
 
 - `get_auth_status`
 - `get_profile`
+- `list_conversations`
+- `get_conversation_detail`
 - `list_current_courses`
 - `get_course_announcements`
 - `get_discussion_topic_detail`

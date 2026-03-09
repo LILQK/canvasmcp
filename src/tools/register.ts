@@ -52,6 +52,122 @@ export function registerTools(
   }
 ): void {
   server.registerTool(
+    'list_conversations',
+    {
+      description: 'Use this when you need Canvas inbox conversations or private message threads available to the authenticated user.',
+      annotations: readOnlyAnnotations,
+      inputSchema: {
+        scope: z.enum(['inbox', 'sent', 'archived']).default('inbox'),
+        limit: z.number().int().positive().max(100).default(20)
+      },
+      outputSchema: {
+        scope: z.enum(['inbox', 'sent', 'archived']),
+        conversations: z.array(
+          z.object({
+            id: z.number(),
+            subject: z.string().nullable(),
+            workflowState: z.string().nullable(),
+            lastMessage: richTextSchema,
+            lastMessageAt: normalizedDateSchema,
+            lastAuthoredMessage: richTextSchema,
+            lastAuthoredMessageAt: normalizedDateSchema,
+            messageCount: z.number().nullable(),
+            subscribed: z.boolean().nullable(),
+            isPrivate: z.boolean().nullable(),
+            starred: z.boolean().nullable(),
+            visible: z.boolean().nullable(),
+            contextName: z.string().nullable(),
+            contextCode: z.string().nullable(),
+            audience: z.array(z.number()),
+            participants: z.array(
+              z.object({
+                id: z.number(),
+                name: z.string().nullable(),
+                fullName: z.string().nullable(),
+                pronouns: z.string().nullable(),
+                avatarUrl: z.string().nullable()
+              })
+            )
+          })
+        )
+      }
+    },
+    async ({ scope, limit }) => {
+      try {
+        const service = await dependencies.sessionManager.getService();
+        const conversations = await service.listConversations(scope, limit);
+        const payload = { scope, conversations };
+        return {
+          content: [{ type: 'text', text: toTextPayload('Canvas conversations', payload) }],
+          structuredContent: payload
+        };
+      } catch (error) {
+        formatToolError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_conversation_detail',
+    {
+      description: 'Use this when you need the full participant list and message bodies for a specific Canvas inbox conversation.',
+      annotations: readOnlyAnnotations,
+      inputSchema: {
+        conversationId: z.number().int().positive()
+      },
+      outputSchema: {
+        id: z.number(),
+        subject: z.string().nullable(),
+        workflowState: z.string().nullable(),
+        messageCount: z.number().nullable(),
+        subscribed: z.boolean().nullable(),
+        isPrivate: z.boolean().nullable(),
+        starred: z.boolean().nullable(),
+        visible: z.boolean().nullable(),
+        contextName: z.string().nullable(),
+        contextCode: z.string().nullable(),
+        audience: z.array(z.number()),
+        participants: z.array(
+          z.object({
+            id: z.number(),
+            name: z.string().nullable(),
+            fullName: z.string().nullable(),
+            pronouns: z.string().nullable(),
+            avatarUrl: z.string().nullable()
+          })
+        ),
+        messages: z.array(
+          z.object({
+            id: z.number(),
+            authorId: z.number().nullable(),
+            body: richTextSchema,
+            createdAt: normalizedDateSchema,
+            generated: z.boolean().nullable(),
+            participatingUserIds: z.array(z.number()),
+            attachments: z.array(fileSchema)
+          })
+        ),
+        lastMessage: richTextSchema,
+        lastMessageAt: normalizedDateSchema,
+        lastAuthoredMessage: richTextSchema,
+        lastAuthoredMessageAt: normalizedDateSchema
+      }
+    },
+    async ({ conversationId }) => {
+      try {
+        const service = await dependencies.sessionManager.getService();
+        const detail = await service.getConversationDetail(conversationId);
+        return {
+          content: [{ type: 'text', text: toTextPayload('Canvas conversation detail', detail) }],
+          structuredContent: detail
+        };
+      } catch (error) {
+        formatToolError(error);
+      }
+    }
+  );
+
+  server.registerTool(
     'get_auth_status',
     {
       description: 'Use this when you need to verify whether the local Canvas session is configured and still valid.',

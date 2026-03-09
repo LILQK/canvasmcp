@@ -1,6 +1,9 @@
 import { chromium, type BrowserContext } from 'playwright';
 import type { BrowserStorageState } from '../playwright-types.js';
 
+const HEADED_VIEWPORT = { width: 1280, height: 900 } as const;
+const HEADLESS_VIEWPORT = { width: 1440, height: 1024 } as const;
+
 interface LaunchPersistentCanvasContextOptions {
   profileDir: string;
   browserExecutablePath?: string | null;
@@ -16,10 +19,11 @@ export async function launchPersistentCanvasContext(
 ): Promise<BrowserContext> {
   return chromium.launchPersistentContext(options.profileDir, {
     executablePath: options.browserExecutablePath ?? undefined,
+    chromiumSandbox: true,
     headless,
     ignoreDefaultArgs: ['--enable-automation'],
-    viewport: headless ? { width: 1440, height: 1024 } : null,
-    args: headless ? [] : ['--start-maximized']
+    viewport: headless ? HEADLESS_VIEWPORT : HEADED_VIEWPORT,
+    args: headless ? [] : [`--window-size=${HEADED_VIEWPORT.width},${HEADED_VIEWPORT.height}`]
   });
 }
 

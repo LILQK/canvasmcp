@@ -196,6 +196,44 @@ export interface CanvasEnrollment {
   total_activity_time?: number | null;
 }
 
+export interface CanvasConversationParticipant {
+  id: number;
+  name?: string | null;
+  full_name?: string | null;
+  pronouns?: string | null;
+  avatar_url?: string | null;
+}
+
+export interface CanvasConversationMessage {
+  id: number;
+  created_at?: string | null;
+  body?: string | null;
+  author_id?: number | null;
+  generated?: boolean | null;
+  participating_user_ids?: number[] | null;
+  attachments?: CanvasAttachment[] | null;
+}
+
+export interface CanvasConversation {
+  id: number;
+  subject?: string | null;
+  workflow_state?: string | null;
+  last_message?: string | null;
+  last_message_at?: string | null;
+  last_authored_message?: string | null;
+  last_authored_message_at?: string | null;
+  message_count?: number | null;
+  subscribed?: boolean | null;
+  private?: boolean | null;
+  starred?: boolean | null;
+  visible?: boolean | null;
+  context_name?: string | null;
+  context_code?: string | null;
+  audience?: number[] | null;
+  participants?: CanvasConversationParticipant[] | null;
+  messages?: CanvasConversationMessage[] | null;
+}
+
 export interface ProfileResult extends Record<string, unknown> {
   id: number;
   name: string;
@@ -321,6 +359,63 @@ export interface CalendarEventResult extends Record<string, unknown> {
   endAt: NormalizedDateTime;
   htmlUrl: string | null;
   sourceType: 'calendar' | 'todo';
+}
+
+export interface ConversationParticipantResult extends Record<string, unknown> {
+  id: number;
+  name: string | null;
+  fullName: string | null;
+  pronouns: string | null;
+  avatarUrl: string | null;
+}
+
+export interface ConversationSummaryResult extends Record<string, unknown> {
+  id: number;
+  subject: string | null;
+  workflowState: string | null;
+  lastMessage: RichTextResult;
+  lastMessageAt: NormalizedDateTime;
+  lastAuthoredMessage: RichTextResult;
+  lastAuthoredMessageAt: NormalizedDateTime;
+  messageCount: number | null;
+  subscribed: boolean | null;
+  isPrivate: boolean | null;
+  starred: boolean | null;
+  visible: boolean | null;
+  contextName: string | null;
+  contextCode: string | null;
+  audience: number[];
+  participants: ConversationParticipantResult[];
+}
+
+export interface ConversationMessageResult extends Record<string, unknown> {
+  id: number;
+  authorId: number | null;
+  body: RichTextResult;
+  createdAt: NormalizedDateTime;
+  generated: boolean | null;
+  participatingUserIds: number[];
+  attachments: FileMetadataResult[];
+}
+
+export interface ConversationDetailResult extends Record<string, unknown> {
+  id: number;
+  subject: string | null;
+  workflowState: string | null;
+  messageCount: number | null;
+  subscribed: boolean | null;
+  isPrivate: boolean | null;
+  starred: boolean | null;
+  visible: boolean | null;
+  contextName: string | null;
+  contextCode: string | null;
+  audience: number[];
+  participants: ConversationParticipantResult[];
+  messages: ConversationMessageResult[];
+  lastMessage: RichTextResult;
+  lastMessageAt: NormalizedDateTime;
+  lastAuthoredMessage: RichTextResult;
+  lastAuthoredMessageAt: NormalizedDateTime;
 }
 
 export interface ModuleResult extends Record<string, unknown> {

@@ -11,6 +11,54 @@ class FakeServer {
 }
 
 describe('tool registration', () => {
+  it('returns structured data for conversation listings', async () => {
+    const fakeServer = new FakeServer();
+    const fakeService = {
+      listConversations: vi.fn().mockResolvedValue([
+        {
+          id: 2072450,
+          subject: 'Comentario de la PEC 1',
+          workflowState: 'read',
+          lastMessage: { html: 'Hola', text: 'Hola' },
+          lastMessageAt: { raw: '2026-03-06T09:11:10Z', localDateTime: '2026-03-06T10:11:10' },
+          lastAuthoredMessage: { html: null, text: null },
+          lastAuthoredMessageAt: { raw: null, localDateTime: null },
+          messageCount: 2,
+          subscribed: true,
+          isPrivate: false,
+          starred: false,
+          visible: true,
+          contextName: '20.642 - Fundamentos matematicos',
+          contextCode: 'course_77403',
+          audience: [54146],
+          participants: [
+            {
+              id: 54146,
+              name: 'Salvador',
+              fullName: 'Salvador Linares',
+              pronouns: null,
+              avatarUrl: null
+            }
+          ]
+        }
+      ])
+    };
+    const sessionManager = {
+      getService: vi.fn().mockResolvedValue(fakeService)
+    } as unknown as BrowserSessionManager;
+
+    registerTools(fakeServer as never, { sessionManager });
+
+    const tool = fakeServer.tools.get('list_conversations');
+    const result = (await tool?.handler({ scope: 'inbox', limit: 10 } as never)) as {
+      structuredContent: {
+        conversations: Array<{ id: number }>;
+      };
+    };
+
+    expect(result.structuredContent.conversations[0]?.id).toBe(2072450);
+  });
+
   it('returns structured data for course listings', async () => {
     const fakeServer = new FakeServer();
     const fakeService = {
