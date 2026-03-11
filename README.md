@@ -46,7 +46,7 @@ Run the published package directly with `npx`:
 npx -y --package @canvas-mcp/server canvasmcp run
 ```
 
-When the server starts it opens a browser window automatically, waits for a valid Canvas session, and then keeps that window open while the MCP server is running. Do not close that browser window during use.
+When the server starts it opens a browser window automatically, waits for a valid Canvas session, and then keeps that window open while the MCP server is running. Do not close that browser window during use. When the MCP server stops normally or the client closes the stdio connection cleanly, the linked browser window should close with it.
 
 ## MCP Client Config
 
