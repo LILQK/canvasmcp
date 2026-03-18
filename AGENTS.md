@@ -6,7 +6,7 @@ Agent-focused operating guide for this repository. This file complements [README
 
 - Project: Canvas LMS MCP server
 - npm package: `@canvas-mcp/server`
-- Current package version: `0.1.7`
+- Current package version: `0.1.8`
 - Repository: [LILQK/canvasmcp](https://github.com/LILQK/canvasmcp)
 - npm page: [@canvas-mcp/server](https://www.npmjs.com/package/@canvas-mcp/server)
 - Repository visibility: public
@@ -115,6 +115,8 @@ Current tool surface:
 - `get_user_todo`
 - `get_course_modules`
 - `get_module_items`
+- `list_course_pages`
+- `get_course_page_detail`
 - `get_course_files`
 - `get_grades_summary`
 - `search_course_content`
@@ -125,6 +127,7 @@ Intent:
 - Read-only only
 - Optimized for student workload discovery
 - `get_weekly_digest` is the best general answer for "what do I have next week?"
+- `list_course_pages` + `get_course_page_detail` are the preferred workflow for reading and summarizing regular course pages (not only assignments or announcements)
 
 ## Client Invocation
 
@@ -178,6 +181,8 @@ Recommended manual smoke tests after auth, HTTP, or tool changes:
    - `get_auth_status`
    - `get_profile`
    - `list_current_courses`
+   - `list_course_pages`
+   - `get_course_page_detail`
    - `get_weekly_digest`
 4. Re-check any tool you changed directly
 

@@ -6,12 +6,12 @@
 [![GitHub issues](https://img.shields.io/github/issues/LILQK/canvasmcp)](https://github.com/LILQK/canvasmcp/issues)
 [![License](https://img.shields.io/badge/license-MIT-green)](./LICENSE)
 
-Local MCP server for Canvas LMS instances. It runs over `stdio`, keeps a live browser session open while the MCP is running, and exposes a read-only tool surface for deadlines, announcements, inbox conversations, modules, files, grades, and weekly planning.
+Local MCP server for Canvas LMS instances. It runs over `stdio`, keeps a live browser session open while the MCP is running, and exposes a read-only tool surface for deadlines, announcements, inbox conversations, course pages, modules, files, grades, and weekly planning.
 
 ## Highlights
 
 - Works with Canvas LMS web sessions and the standard Canvas API.
-- Supports weekly planning, assignments, announcements, inbox conversations, modules, files, grades, and content search.
+- Supports weekly planning, assignments, announcements, inbox conversations, course pages, modules, files, grades, and content search.
 - Runs locally over `stdio` and opens a live browser session for authentication.
 - Published on npm as [`@canvas-mcp/server`](https://www.npmjs.com/package/@canvas-mcp/server).
 
@@ -225,12 +225,19 @@ Source: [OpenAI Codex MCP docs](https://developers.openai.com/resources/docs-mcp
 - `get_user_todo`
 - `get_course_modules`
 - `get_module_items`
+- `list_course_pages`
+- `get_course_page_detail`
 - `get_course_files`
 - `get_grades_summary`
 - `search_course_content`
 - `get_weekly_digest`
 
-`get_weekly_digest` is the preferred tool for “what do I have next week?” style questions because assignments alone are often incomplete in many Canvas courses.
+`get_weekly_digest` is the preferred tool for "what do I have next week?" style questions because assignments alone are often incomplete in many Canvas courses.
+
+For regular course pages (for example content pages that are not assignments or announcements), use:
+
+1. `list_course_pages` to discover available pages in a course.
+2. `get_course_page_detail` to retrieve full page content (`body.html` + `body.text`) for summarization.
 
 ## Configuration
 
@@ -297,3 +304,4 @@ By contributing, you agree that your contributions may be used in this project u
 ## Star History
 
 [![Star History Chart](https://api.star-history.com/svg?repos=LILQK/canvasmcp&type=Date)](https://www.star-history.com/#LILQK/canvasmcp&Date)
+

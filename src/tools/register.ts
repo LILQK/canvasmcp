@@ -692,6 +692,94 @@ export function registerTools(
   );
 
   server.registerTool(
+    'list_course_pages',
+    {
+      description: 'Use this when you need to list regular Canvas course pages so the agent can choose one to read.',
+      annotations: readOnlyAnnotations,
+      inputSchema: {
+        courseId: z.number().int().positive(),
+        limit: z.number().int().positive().max(200).default(100),
+        publishedOnly: z.boolean().default(false)
+      },
+      outputSchema: {
+        courseId: z.number(),
+        publishedOnly: z.boolean(),
+        pages: z.array(
+          z.object({
+            courseId: z.number(),
+            pageId: z.number().nullable(),
+            pageUrl: z.string().nullable(),
+            title: z.string().nullable(),
+            htmlUrl: z.string().nullable(),
+            published: z.boolean().nullable(),
+            frontPage: z.boolean().nullable(),
+            lockedForUser: z.boolean().nullable(),
+            updatedAt: normalizedDateSchema
+          })
+        )
+      }
+    },
+    async ({ courseId, limit, publishedOnly }) => {
+      try {
+        const service = await dependencies.sessionManager.getService();
+        const pages = await service.listCoursePages(courseId, limit, publishedOnly);
+        const payload = { courseId, publishedOnly, pages };
+        return {
+          content: [{ type: 'text', text: toTextPayload('Canvas course pages', payload) }],
+          structuredContent: payload
+        };
+      } catch (error) {
+        formatToolError(error);
+      }
+    }
+  );
+
+  server.registerTool(
+    'get_course_page_detail',
+    {
+      description: 'Use this when you need the full content of a Canvas course page by slug, page id, or page URL.',
+      annotations: readOnlyAnnotations,
+      inputSchema: {
+        courseId: z.number().int().positive(),
+        pageIdentifier: z.string().min(1)
+      },
+      outputSchema: {
+        courseId: z.number(),
+        pageId: z.number().nullable(),
+        pageUrl: z.string().nullable(),
+        title: z.string().nullable(),
+        htmlUrl: z.string().nullable(),
+        published: z.boolean().nullable(),
+        frontPage: z.boolean().nullable(),
+        lockedForUser: z.boolean().nullable(),
+        createdAt: normalizedDateSchema,
+        updatedAt: normalizedDateSchema,
+        body: richTextSchema,
+        lastEditedBy: z
+          .object({
+            id: z.number().nullable(),
+            displayName: z.string().nullable(),
+            avatarImageUrl: z.string().nullable(),
+            htmlUrl: z.string().nullable()
+          })
+          .nullable()
+      }
+    },
+    async ({ courseId, pageIdentifier }) => {
+      try {
+        const service = await dependencies.sessionManager.getService();
+        const detail = await service.getCoursePageDetail(courseId, pageIdentifier);
+        return {
+          content: [{ type: 'text', text: toTextPayload('Canvas course page detail', detail) }],
+          structuredContent: detail
+        };
+      } catch (error) {
+        formatToolError(error);
+      }
+    }
+  );
+
+  server.registerTool(
     'get_course_files',
     {
       description: 'Use this when you need file metadata and URLs for a course.',

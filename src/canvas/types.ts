@@ -186,6 +186,29 @@ export interface CanvasFile {
   folder_id?: number | null;
 }
 
+export interface CanvasPage {
+  page_id?: number | null;
+  url?: string | null;
+  title?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  hide_from_students?: boolean | null;
+  editing_roles?: string | null;
+  last_edited_by?: {
+    id?: number | null;
+    display_name?: string | null;
+    avatar_image_url?: string | null;
+    html_url?: string | null;
+  } | null;
+  body?: string | null;
+  published?: boolean | null;
+  publish_at?: string | null;
+  front_page?: boolean | null;
+  locked_for_user?: boolean | null;
+  lock_explanation?: string | null;
+  html_url?: string | null;
+}
+
 export interface CanvasEnrollment {
   current_score?: number | null;
   final_score?: number | null;
@@ -438,6 +461,38 @@ export interface ModuleItemResult extends Record<string, unknown> {
   completionRequirement: {
     type: string | null;
     completed: boolean | null;
+  } | null;
+}
+
+export interface CoursePageSummaryResult extends Record<string, unknown> {
+  courseId: number;
+  pageId: number | null;
+  pageUrl: string | null;
+  title: string | null;
+  htmlUrl: string | null;
+  published: boolean | null;
+  frontPage: boolean | null;
+  lockedForUser: boolean | null;
+  updatedAt: NormalizedDateTime;
+}
+
+export interface CoursePageDetailResult extends Record<string, unknown> {
+  courseId: number;
+  pageId: number | null;
+  pageUrl: string | null;
+  title: string | null;
+  htmlUrl: string | null;
+  published: boolean | null;
+  frontPage: boolean | null;
+  lockedForUser: boolean | null;
+  createdAt: NormalizedDateTime;
+  updatedAt: NormalizedDateTime;
+  body: RichTextResult;
+  lastEditedBy: {
+    id: number | null;
+    displayName: string | null;
+    avatarImageUrl: string | null;
+    htmlUrl: string | null;
   } | null;
 }
 

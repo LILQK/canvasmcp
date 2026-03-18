@@ -91,6 +91,93 @@ describe('tool registration', () => {
     expect(result.structuredContent.courses[0]?.id).toBe(10);
   });
 
+  it('returns structured data for course page listings', async () => {
+    const fakeServer = new FakeServer();
+    const fakeService = {
+      listCoursePages: vi.fn().mockResolvedValue([
+        {
+          courseId: 77399,
+          pageId: 81234,
+          pageUrl: 'enunciado-de-la-actividad-pec2',
+          title: 'Enunciado de la actividad PEC2',
+          htmlUrl: 'https://aula.uoc.edu/courses/77399/pages/enunciado-de-la-actividad-pec2',
+          published: true,
+          frontPage: false,
+          lockedForUser: false,
+          updatedAt: {
+            raw: '2026-03-10T10:00:00Z',
+            localDateTime: '2026-03-10T11:00:00'
+          }
+        }
+      ])
+    };
+    const sessionManager = {
+      getService: vi.fn().mockResolvedValue(fakeService)
+    } as unknown as BrowserSessionManager;
+
+    registerTools(fakeServer as never, { sessionManager });
+
+    const tool = fakeServer.tools.get('list_course_pages');
+    const result = (await tool?.handler({ courseId: 77399, limit: 50, publishedOnly: false } as never)) as {
+      structuredContent: {
+        pages: Array<{ pageUrl: string }>;
+      };
+    };
+
+    expect(result.structuredContent.pages[0]?.pageUrl).toBe('enunciado-de-la-actividad-pec2');
+  });
+
+  it('returns structured data for a course page detail', async () => {
+    const fakeServer = new FakeServer();
+    const fakeService = {
+      getCoursePageDetail: vi.fn().mockResolvedValue({
+        courseId: 77399,
+        pageId: 81234,
+        pageUrl: 'enunciado-de-la-actividad-pec2',
+        title: 'Enunciado de la actividad PEC2',
+        htmlUrl: 'https://aula.uoc.edu/courses/77399/pages/enunciado-de-la-actividad-pec2',
+        published: true,
+        frontPage: false,
+        lockedForUser: false,
+        createdAt: {
+          raw: '2026-03-08T09:00:00Z',
+          localDateTime: '2026-03-08T10:00:00'
+        },
+        updatedAt: {
+          raw: '2026-03-10T10:00:00Z',
+          localDateTime: '2026-03-10T11:00:00'
+        },
+        body: {
+          html: '<p>Contenido de prueba</p>',
+          text: 'Contenido de prueba'
+        },
+        lastEditedBy: {
+          id: 54146,
+          displayName: 'Docente Test',
+          avatarImageUrl: null,
+          htmlUrl: null
+        }
+      })
+    };
+    const sessionManager = {
+      getService: vi.fn().mockResolvedValue(fakeService)
+    } as unknown as BrowserSessionManager;
+
+    registerTools(fakeServer as never, { sessionManager });
+
+    const tool = fakeServer.tools.get('get_course_page_detail');
+    const result = (await tool?.handler({
+      courseId: 77399,
+      pageIdentifier: 'enunciado-de-la-actividad-pec2'
+    } as never)) as {
+      structuredContent: {
+        body: { text: string };
+      };
+    };
+
+    expect(result.structuredContent.body.text).toBe('Contenido de prueba');
+  });
+
   it('returns auth status with the declared structured shape', async () => {
     const fakeServer = new FakeServer();
     const sessionManager = {

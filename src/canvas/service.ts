@@ -29,6 +29,7 @@ import type {
   CanvasFile,
   CanvasModule,
   CanvasModuleItem,
+  CanvasPage,
   CanvasPlannerItem,
   CanvasProfile,
   ConversationDetailResult,
@@ -36,6 +37,8 @@ import type {
   ConversationParticipantResult,
   ConversationSummaryResult,
   CourseActivityResult,
+  CoursePageDetailResult,
+  CoursePageSummaryResult,
   CourseResult,
   DigestItemResult,
   DiscussionTopicDetailResult,
@@ -169,6 +172,93 @@ function normalizeDiscussionEntries(
   }
 
   return Array.isArray(payload?.view) ? payload.view : [];
+}
+
+function mapCoursePageSummary(courseId: number, page: CanvasPage): CoursePageSummaryResult {
+  return {
+    courseId,
+    pageId: page.page_id ?? null,
+    pageUrl: page.url ?? null,
+    title: page.title ?? null,
+    htmlUrl: page.html_url ?? null,
+    published: page.published ?? null,
+    frontPage: page.front_page ?? null,
+    lockedForUser: page.locked_for_user ?? null,
+    updatedAt: normalizeDateTime(page.updated_at ?? null)
+  };
+}
+
+function mapCoursePageDetail(courseId: number, page: CanvasPage): CoursePageDetailResult {
+  return {
+    courseId,
+    pageId: page.page_id ?? null,
+    pageUrl: page.url ?? null,
+    title: page.title ?? null,
+    htmlUrl: page.html_url ?? null,
+    published: page.published ?? null,
+    frontPage: page.front_page ?? null,
+    lockedForUser: page.locked_for_user ?? null,
+    createdAt: normalizeDateTime(page.created_at ?? null),
+    updatedAt: normalizeDateTime(page.updated_at ?? null),
+    body: {
+      html: page.body ?? null,
+      text: stripHtml(page.body)
+    },
+    lastEditedBy: page.last_edited_by
+      ? {
+          id: page.last_edited_by.id ?? null,
+          displayName: page.last_edited_by.display_name ?? null,
+          avatarImageUrl: page.last_edited_by.avatar_image_url ?? null,
+          htmlUrl: page.last_edited_by.html_url ?? null
+        }
+      : null
+  };
+}
+
+function tryDecodeURIComponent(value: string): string {
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
+}
+
+function extractPageIdentifier(courseId: number, rawIdentifier: string): string {
+  const trimmed = rawIdentifier.trim();
+  if (!trimmed) {
+    throw new CanvasRequestError('Page identifier is required.', 400);
+  }
+
+  const withoutQueryOrHash = trimmed.split(/[?#]/, 1)[0] ?? trimmed;
+
+  if (/^https?:\/\//i.test(trimmed)) {
+    try {
+      const parsedUrl = new URL(trimmed);
+      const marker = `/courses/${courseId}/pages/`;
+      const markerIndex = parsedUrl.pathname.indexOf(marker);
+      if (markerIndex >= 0) {
+        const remainder = parsedUrl.pathname.slice(markerIndex + marker.length);
+        const firstSegment = remainder.split('/')[0] ?? '';
+        if (firstSegment) {
+          return tryDecodeURIComponent(firstSegment);
+        }
+      }
+    } catch {
+      // Fall through and treat it as a plain identifier.
+    }
+  }
+
+  const coursePathMatch = withoutQueryOrHash.match(new RegExp(`/courses/${courseId}/pages/([^/?#]+)`));
+  if (coursePathMatch?.[1]) {
+    return tryDecodeURIComponent(coursePathMatch[1]);
+  }
+
+  const normalized = tryDecodeURIComponent(withoutQueryOrHash.replace(/^\/+|\/+$/g, ''));
+  if (!normalized) {
+    throw new CanvasRequestError('Page identifier is required.', 400);
+  }
+
+  return normalized;
 }
 
 export class CanvasService {
@@ -531,6 +621,47 @@ export class CanvasService {
           }
         : null
     }));
+  }
+
+  async listCoursePages(courseId: number, limit = 100, publishedOnly = false): Promise<CoursePageSummaryResult[]> {
+    const cappedLimit = Math.min(Math.max(limit, 1), 200);
+    const params = new URLSearchParams();
+    params.append('per_page', String(Math.min(cappedLimit, 100)));
+
+    const pages = await this.client.getPaginatedJson<CanvasPage>(
+      `/api/v1/courses/${courseId}/pages`,
+      params,
+      Math.max(1, Math.ceil(cappedLimit / 100))
+    );
+
+    const visiblePages = publishedOnly ? pages.filter((page) => page.published !== false) : pages;
+    return visiblePages.slice(0, cappedLimit).map((page) => mapCoursePageSummary(courseId, page));
+  }
+
+  async getCoursePageDetail(courseId: number, pageIdentifier: string): Promise<CoursePageDetailResult> {
+    const identifier = extractPageIdentifier(courseId, pageIdentifier);
+    const encodedIdentifier = encodeURIComponent(identifier);
+
+    const includeParams = new URLSearchParams();
+    includeParams.append('include[]', 'body');
+    includeParams.append('include[]', 'last_edited_by');
+
+    let page: CanvasPage;
+    try {
+      page = await this.client.withRequestContext((api) =>
+        this.client.getJson<CanvasPage>(api, `/api/v1/courses/${courseId}/pages/${encodedIdentifier}`, includeParams)
+      );
+    } catch (error) {
+      if (!(error instanceof CanvasRequestError) || error.status !== 400) {
+        throw error;
+      }
+
+      page = await this.client.withRequestContext((api) =>
+        this.client.getJson<CanvasPage>(api, `/api/v1/courses/${courseId}/pages/${encodedIdentifier}`)
+      );
+    }
+
+    return mapCoursePageDetail(courseId, page);
   }
 
   async getCourseFiles(courseId: number, query?: string, limit = 25): Promise<FileMetadataResult[]> {
