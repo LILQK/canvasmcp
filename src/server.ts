@@ -120,8 +120,6 @@ export async function runServer(): Promise<void> {
   const config = getConfig();
   const sessionManager = new BrowserSessionManager(config);
 
-  await sessionManager.ensureAuthenticated();
-
   const server = new McpServer({
     name: 'canvas-local-mcp',
     version: packageJson.version
@@ -135,4 +133,13 @@ export async function runServer(): Promise<void> {
   await server.connect(transport);
   attachShutdownHandlers({ server, sessionManager });
   console.error('canvas-local-mcp server running on stdio');
+
+  // Do not block MCP handshake on interactive login.
+  // Some clients reload the process if stdio is not ready quickly, which can
+  // cause multiple instances to compete for the same browser profile.
+  void sessionManager.ensureAuthenticated().catch((error: unknown) => {
+    console.error(
+      `Initial authentication warmup failed: ${error instanceof Error ? error.message : String(error)}`
+    );
+  });
 }
